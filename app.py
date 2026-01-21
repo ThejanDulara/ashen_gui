@@ -13,7 +13,6 @@ DATABASE_URL = os.getenv("DATABASE_URL")
 if not DATABASE_URL:
     raise RuntimeError("DATABASE_URL is not set")
 
-# Railway MySQL fix
 if DATABASE_URL.startswith("mysql://"):
     DATABASE_URL = DATABASE_URL.replace("mysql://", "mysql+pymysql://", 1)
 
@@ -23,34 +22,39 @@ app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 db = SQLAlchemy(app)
 
 # -----------------------------
-# Model (MATCHES DB EXACTLY)
+# Model
 # -----------------------------
 class AIInsight(db.Model):
     __tablename__ = "ai_insights"
 
     id = db.Column(db.Integer, primary_key=True)
     created_at = db.Column(db.DateTime)
-    ai_json = db.Column(db.JSON)
+    ai_json = db.Column(db.Text)   # ← raw storage
 
 # -----------------------------
-# Health check
+# Health
 # -----------------------------
 @app.get("/api/health")
 def health():
-    return {
-        "status": "ok",
-        "service": "ai-insights-api"
-    }
+    return {"status": "ok"}
 
 # -----------------------------
-# Insert endpoint
+# Insert endpoint (ULTRA SAFE)
 # -----------------------------
 @app.post("/api/ai-insights")
 def insert_ai_insight():
-    data = request.get_json(force=True)
+
+    # 🔥 Get raw body (never fails)
+    raw_body = request.get_data(as_text=True)
+
+    if not raw_body:
+        return jsonify({
+            "ok": False,
+            "error": "Empty request body"
+        }), 400
 
     record = AIInsight(
-        ai_json=data   # 👈 store EXACT JSON as-is
+        ai_json=raw_body   # ← store EXACTLY what arrived
     )
 
     try:
@@ -69,7 +73,7 @@ def insert_ai_insight():
         }), 500
 
 # -----------------------------
-# Local dev entry
+# Local dev
 # -----------------------------
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
