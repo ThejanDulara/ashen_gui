@@ -3,6 +3,8 @@ from datetime import datetime
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
 from flask_cors import CORS
+import json
+from flask import request, jsonify
 
 # -----------------------------
 # App setup
@@ -58,11 +60,13 @@ def insert_ai_insight():
 
     record = AIInsight(
         source=data.get("source"),
-        year_month=data.get("year_month"),
-        insights=data.get("insights"),
-        reasons=data.get("reasons"),
-        risks=data.get("risks"),
-        recommendations=data.get("recommendations"),
+        yearMonth=data.get("yearMonth"),   # <-- match DB column
+
+        insights=json.dumps(data.get("insights", [])),
+        reasons=json.dumps(data.get("reasons", [])),
+        risks=json.dumps(data.get("risks", [])),
+        recommendations=json.dumps(data.get("recommendations", [])),
+
         raw_response=data.get("raw_response"),
     )
 
