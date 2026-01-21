@@ -72,6 +72,23 @@ def insert_ai_insight():
             "error": str(e)
         }), 500
 
+@app.get("/api/ai-insights/latest")
+def get_latest_ai_insight():
+    row = (
+        db.session.query(AIInsight)
+        .order_by(AIInsight.id.desc())
+        .first()
+    )
+
+    if not row:
+        return jsonify({"ok": False, "error": "No data"}), 404
+
+    return jsonify({
+        "ok": True,
+        "data": row.ai_json
+    })
+
+
 # -----------------------------
 # Local dev
 # -----------------------------
