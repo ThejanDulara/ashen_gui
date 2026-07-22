@@ -4,7 +4,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 import werkzeug
-werkzeug.__version__ = "3.1.3"
+if not hasattr(werkzeug, "__version__"):
+    werkzeug.__version__ = "3.1.3"
 
 from flask import Flask, request, jsonify
 from flask_sqlalchemy import SQLAlchemy
@@ -31,10 +32,11 @@ db = SQLAlchemy(app)
 # OPENAI SETUP (NEW)
 # -----------------------------
 OPENAI_API_KEY = os.getenv("OPENAI_API_KEY")
-if not OPENAI_API_KEY:
-    raise RuntimeError("OPENAI_API_KEY is not set")
-
-client = OpenAI(api_key=OPENAI_API_KEY)
+client = None
+if OPENAI_API_KEY:
+    client = OpenAI(api_key=OPENAI_API_KEY)
+else:
+    print("Warning: OPENAI_API_KEY is not set. OpenAI integration is disabled.")
 
 # -----------------------------
 # MODELS (EXISTING + NEW)
@@ -256,6 +258,8 @@ def get_recent_ai_insights(limit=5):
 
 
 def ask_openai(prompt):
+    if not client:
+        raise RuntimeError("OpenAI client is not initialized (OPENAI_API_KEY is missing)")
     response = client.chat.completions.create(
         model="gpt-4.1-mini",
         messages=[
@@ -327,5 +331,6 @@ Explain WHY changes happened.
 # LOCAL DEV (UNCHANGED)
 # -----------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000)
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)
 
