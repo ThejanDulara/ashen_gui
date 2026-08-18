@@ -5,3 +5,4 @@ pymysql
 gunicorn
 openai
 python-dotenv
+requests
